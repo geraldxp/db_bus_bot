@@ -3,6 +3,7 @@ Main entry point — registers all handlers and starts watchers.
 """
 import asyncio
 import logging
+from pathlib import Path
 
 from telegram.ext import ApplicationBuilder
 
@@ -33,6 +34,11 @@ async def post_init(app):
     asyncio.create_task(payment_watcher_loop(bot))
     asyncio.create_task(deposit_watcher_loop(bot))
     logger.info("DB pool ready. Watchers started.")
+
+async def post_init(app):
+    pool = await get_pool()
+    schema = Path("db/schema.sql").read_text()
+    await pool.execute(schema)
 
 
 async def post_shutdown(app):

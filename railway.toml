@@ -1,0 +1,43 @@
+[build]
+builder = "nixpacks"
+
+[[services]]
+name = "bot"
+startCommand = "python main.py"
+
+[[services]]
+name = "webapp"
+startCommand = "uvicorn webapp.server:app --host 0.0.0.0 --port $PORT"
+```
+
+Or alternatively, use Railway's dashboard to create two services from the same repo and set the start command per service manually — that's often easier than the config file approach.
+
+**Add a `Procfile`** as a simpler alternative to `railway.toml` if you want one repo/one service (not recommended here since bot + server are separate processes):
+
+Actually for two processes, you're better off with two Railway services rather than a Procfile.
+
+**PostgreSQL**
+
+In Railway, click **Add Service → Database → PostgreSQL**. Railway will inject `DATABASE_URL` automatically into your services as an environment variable — your `config.py` already reads it from the environment so nothing needs to change.
+
+**Environment variables to set on each service**
+
+On the **bot service**:
+```
+BOT_TOKEN=
+DATABASE_URL=            ← auto-injected if you use Railway Postgres
+ADMIN_CHANNEL_ID=
+SUPPORT_GROUP_ID=
+ADMIN_USERNAME=
+DEPOSIT_ADDRESS=
+HELIUS_API_KEY=
+WEBAPP_URL=https://your-webapp-service.railway.app/wallet
+DEPOSIT_EXPIRY_MINUTES=60
+PAYMENT_EXPIRY_MINUTES=30
+WATCHER_INTERVAL=30
+```
+
+On the **webapp service**:
+```
+# Only needs PORT (Railway injects this automatically)
+# No other vars needed unless you add auth to the WebApp endpoint
