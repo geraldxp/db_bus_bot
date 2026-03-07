@@ -37,8 +37,12 @@ async def post_init(app):
 
 async def post_init(app):
     pool = await get_pool()
-    schema = Path("db/schema.sql").read_text()
-    await pool.execute(schema)
+    schema_sql = Path("db/schema.sql").read_text()
+    await pool.execute(schema_sql)          # safe — all tables use CREATE IF NOT EXISTS
+    bot = app.bot
+    asyncio.create_task(payment_watcher_loop(bot))
+    asyncio.create_task(deposit_watcher_loop(bot))
+    logger.info("DB ready. Watchers started.")
 
 
 async def post_shutdown(app):
