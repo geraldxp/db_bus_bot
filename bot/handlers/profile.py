@@ -103,12 +103,18 @@ async def profile_wallet_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     db_user = await bus.get_user(update.effective_user.id)
-    has_wallet = bool(db_user and db_user["wallet_pubkey"])
+    has_phantom = bool(db_user and db_user["wallet_pubkey"])
+    gw = await bus.get_generated_wallet(db_user["id"]) if db_user else None
+    has_generated = gw is not None
     from bot.menus.keyboards import wallet_keyboard
     from utils.templates import wallet_view
-    text = wallet_view(db_user["wallet_pubkey"]) if has_wallet else "👛 No wallet connected."
+    if has_phantom:
+        text = wallet_view(db_user["wallet_pubkey"])
+    else:
+        text = "👛 *Wallet*\n\nNo linked wallet connected."
     await query.edit_message_text(
-        text, parse_mode="Markdown", reply_markup=wallet_keyboard(has_wallet)
+        text, parse_mode="Markdown",
+        reply_markup=wallet_keyboard(has_phantom=has_phantom, has_generated=has_generated),
     )
 
 

@@ -59,27 +59,42 @@ def deposit_amount_keyboard() -> InlineKeyboardMarkup:
 
 # ─── WALLET ───────────────────────────────────────────────────────────────────
 
-def wallet_keyboard(has_wallet: bool, webapp_url: str = "") -> InlineKeyboardMarkup:
-    if has_wallet:
-        buttons = [
-            [InlineKeyboardButton("👁 View Wallet", callback_data="wallet:view")],
-            [InlineKeyboardButton("🔌 Disconnect", callback_data="wallet:disconnect")],
-        ]
+def wallet_keyboard(
+    has_phantom: bool,
+    has_generated: bool = False,
+    webapp_url: str = "",
+) -> InlineKeyboardMarkup:
+    """
+    Full wallet menu keyboard. Shows different options depending on what the user has:
+    - has_phantom: Phantom/manual wallet connected (wallet_pubkey set)
+    - has_generated: Bot-generated wallet exists in generated_wallets table
+    """
+    buttons = []
+
+    # ── Generated wallet section ──
+    if has_generated:
+        buttons.append([InlineKeyboardButton("👛 My Generated Wallet", callback_data="genw:back_to_menu")])
     else:
-        connect_buttons = []
+        buttons.append([InlineKeyboardButton("✨ Generate SOL Wallet", callback_data="wallet:generate")])
+
+    # ── Phantom / manual section ──
+    if has_phantom:
+        buttons.append([InlineKeyboardButton("👁 View Linked Wallet", callback_data="wallet:view")])
+        buttons.append([InlineKeyboardButton("🔌 Disconnect Linked Wallet", callback_data="wallet:disconnect")])
+    else:
+        connect_row = []
         if webapp_url:
-            # WebApp button — opens mini app for automatic Phantom signing
-            connect_buttons.append(
+            connect_row.append(
                 InlineKeyboardButton(
                     "🔗 Connect with Phantom",
                     web_app=WebAppInfo(url=webapp_url),
                 )
             )
-        # Always show text-based fallback
-        connect_buttons.append(
-            InlineKeyboardButton("🔗 Connect (manual)", callback_data="wallet:connect")
+        connect_row.append(
+            InlineKeyboardButton("🔗 Connect Wallet (manual)", callback_data="wallet:connect")
         )
-        buttons = [connect_buttons]
+        buttons.append(connect_row)
+
     buttons.append([InlineKeyboardButton("« Back", callback_data="nav:main")])
     return InlineKeyboardMarkup(buttons)
 

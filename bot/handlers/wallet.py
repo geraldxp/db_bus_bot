@@ -33,15 +33,33 @@ from config import WEBAPP_URL
 logger = logging.getLogger(__name__)
 
 WAITING_SIGNATURE = 1
-NONCE_TTL_SECONDS = 300  # challenge expires after 5 minutes
+NONCE_TTL_SECONDS = 300
+
+
+async def _wallet_state(telegram_id: int) -> tuple:
+    """Return (db_user, has_phantom, has_generated) for a telegram user."""
+    db_user = await bus.get_user(telegram_id)
+    if not db_user:
+        return None, False, False
+    has_phantom = bool(db_user["wallet_pubkey"])
+    gw = await bus.get_generated_wallet(db_user["id"])
+    has_generated = gw is not None
+    return db_user, has_phantom, has_generated
 
 
 async def wallet_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    db_user = await bus.get_user(update.effective_user.id)
-    has_wallet = bool(db_user and db_user["wallet_pubkey"])
+    db_user, has_phantom, has_generated = await _wallet_state(update.effective_user.id)
     await update.message.reply_text(
-        "👛 *Wallet*", parse_mode="Markdown",
-        reply_markup=wallet_keyboard(has_wallet, webapp_url=_webapp_url_for_user(ctx)),
+        "👛 *Wallet*\n──────────────\n\n"
+        "Manage your Solana wallets below.\n\n"
+        "• *Generated Wallet* — create a new wallet directly in the bot\n"
+        "• *Connect Wallet* — link your existing Phantom or any Solana wallet",
+        parse_mode="Markdown",
+        reply_markup=wallet_keyboard(
+            has_phantom=has_phantom,
+            has_generated=has_generated,
+            webapp_url=_webapp_url_for_user(ctx),
+        ),
     )
 
 
@@ -102,9 +120,10 @@ async def wallet_signature_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return WAITING_SIGNATURE
 
     await _save_wallet(update.effective_user.id, pubkey, ctx)
+    _, has_phantom, has_generated = await _wallet_state(update.effective_user.id)
     await update.message.reply_text(
         wallet_connected(pubkey), parse_mode="Markdown",
-        reply_markup=wallet_keyboard(True),
+        reply_markup=wallet_keyboard(has_phantom=has_phantom, has_generated=has_generated),
     )
     return ConversationHandler.END
 
@@ -155,9 +174,10 @@ async def wallet_webapp_data(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
 
     await _save_wallet(update.effective_user.id, pubkey, ctx)
+    _, has_phantom, has_generated = await _wallet_state(update.effective_user.id)
     await update.message.reply_text(
         wallet_connected(pubkey), parse_mode="Markdown",
-        reply_markup=wallet_keyboard(True),
+        reply_markup=wallet_keyboard(has_phantom=has_phantom, has_generated=has_generated),
     )
 
 
@@ -174,26 +194,30 @@ async def _save_wallet(telegram_id: int, pubkey: str, ctx: ContextTypes.DEFAULT_
 async def wallet_view_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    db_user = await bus.get_user(update.effective_user.id)
-    if not db_user["wallet_pubkey"]:
-        await query.edit_message_text("No wallet connected.", reply_markup=wallet_keyboard(False))
+    db_user, has_phantom, has_generated = await _wallet_state(update.effective_user.id)
+    if not has_phantom:
+        await query.edit_message_text(
+            "No linked wallet found.",
+            reply_markup=wallet_keyboard(has_phantom=False, has_generated=has_generated),
+        )
         return
     await query.edit_message_text(
         tmpl_wallet_view(db_user["wallet_pubkey"]),
         parse_mode="Markdown",
-        reply_markup=wallet_keyboard(True),
+        reply_markup=wallet_keyboard(has_phantom=True, has_generated=has_generated),
     )
 
 
 async def wallet_disconnect_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    db_user = await bus.get_user(update.effective_user.id)
+    db_user, has_phantom, has_generated = await _wallet_state(update.effective_user.id)
     await bus.update_wallet_pubkey(db_user["id"], None)
-    logger.info("User %s disconnected wallet", update.effective_user.id)
+    logger.info("User %s disconnected linked wallet", update.effective_user.id)
     from utils.templates import wallet_disconnected
     await query.edit_message_text(
-        wallet_disconnected(), parse_mode="Markdown", reply_markup=wallet_keyboard(False)
+        wallet_disconnected(), parse_mode="Markdown",
+        reply_markup=wallet_keyboard(has_phantom=False, has_generated=has_generated),
     )
 
 

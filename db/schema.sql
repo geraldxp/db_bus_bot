@@ -133,6 +133,20 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- ─── GENERATED WALLETS ───────────────────────────────────────────────────────
+-- One row per user maximum. Private key and seed phrase are Fernet-encrypted.
+CREATE TABLE IF NOT EXISTS generated_wallets (
+    id                SERIAL PRIMARY KEY,
+    user_id           INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    wallet_address    TEXT NOT NULL,
+    encrypted_privkey TEXT NOT NULL,
+    encrypted_seed    TEXT NOT NULL,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_gen_wallets_user ON generated_wallets(user_id);
+
 -- ─── INDEXES ─────────────────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_orders_user_id       ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status        ON orders(status);

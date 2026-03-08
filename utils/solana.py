@@ -43,3 +43,33 @@ def verify_signature(pubkey_b58: str, message: str, signature_b58: str) -> bool:
         return True
     except (BadSignatureError, Exception):
         return False
+
+
+async def get_sol_balance(address: str) -> float:
+    """
+    Fetch the on-chain SOL balance for a wallet address via JSON-RPC.
+    Returns balance in SOL (float), or -1.0 on error.
+    """
+    import aiohttp
+    from config import SOLANA_RPC_URL
+
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "getBalance",
+        "params": [address, {"commitment": "confirmed"}],
+    }
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                SOLANA_RPC_URL,
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=10),
+            ) as resp:
+                data = await resp.json()
+                lamports = data["result"]["value"]
+                return lamports / 1_000_000_000
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning("get_sol_balance failed for %s: %s", address, e)
+        return -1.0

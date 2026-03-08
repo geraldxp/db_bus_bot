@@ -508,6 +508,38 @@ async def get_ticket_owner_telegram_id(ticket_id: int) -> Optional[int]:
     return row["telegram_id"] if row else None
 
 
+# ─── GENERATED WALLETS ───────────────────────────────────────────────────────
+
+async def get_generated_wallet(user_id: int) -> Optional[asyncpg.Record]:
+    pool = await get_pool()
+    return await pool.fetchrow(
+        "SELECT * FROM generated_wallets WHERE user_id = $1", user_id
+    )
+
+
+async def insert_generated_wallet(
+    user_id: int, wallet_address: str,
+    encrypted_privkey: str, encrypted_seed: str,
+) -> asyncpg.Record:
+    pool = await get_pool()
+    return await pool.fetchrow(
+        """
+        INSERT INTO generated_wallets
+            (user_id, wallet_address, encrypted_privkey, encrypted_seed)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
+        """,
+        user_id, wallet_address, encrypted_privkey, encrypted_seed,
+    )
+
+
+async def delete_generated_wallet(user_id: int):
+    pool = await get_pool()
+    await pool.execute(
+        "DELETE FROM generated_wallets WHERE user_id = $1", user_id
+    )
+
+
 # ─── ADMINS ──────────────────────────────────────────────────────────────────
 
 async def get_admin(telegram_id: int) -> Optional[asyncpg.Record]:

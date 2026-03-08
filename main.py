@@ -13,6 +13,7 @@ import bot.handlers.start as start_handler
 import bot.handlers.services as services_handler
 import bot.handlers.deposit as deposit_handler
 import bot.handlers.wallet as wallet_handler
+import bot.handlers.wallet_generate as wallet_generate_handler
 import bot.handlers.profile as profile_handler
 import bot.handlers.support as support_handler
 import admin.handlers as admin_handler
@@ -81,6 +82,7 @@ def main():
     services_handler.register(app)
     deposit_handler.register(app)
     wallet_handler.register(app)
+    wallet_generate_handler.register(app)
     profile_handler.register(app)
     start_handler.register(app)  # fallback nav last
 
