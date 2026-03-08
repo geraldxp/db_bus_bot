@@ -92,5 +92,6 @@ def register(app):
             ],
         },
         fallbacks=[CommandHandler("cancel", deposit_cancel)],
+        per_message=False,
     )
     app.add_handler(conv)

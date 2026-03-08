@@ -3,7 +3,6 @@ Main entry point — registers all handlers and starts watchers.
 """
 import asyncio
 import logging
-from pathlib import Path
 
 from telegram.ext import ApplicationBuilder
 
@@ -28,21 +27,39 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+async def _apply_schema(pool):
+    """
+    Apply schema.sql safely on every boot.
+    Tables/indexes use IF NOT EXISTS so they're always safe.
+    ENUMs use a DO block pattern since CREATE TYPE has no IF NOT EXISTS.
+    """
+    from pathlib import Path
+    schema_sql = Path("db/schema.sql").read_text()
+
+    # Split on statement boundaries and run each one individually so a
+    # DuplicateObjectError on an already-existing ENUM doesn't abort everything.
+    import asyncpg
+    async with pool.acquire() as con:
+        for statement in schema_sql.split(";"):
+            stmt = statement.strip()
+            if not stmt:
+                continue
+            try:
+                await con.execute(stmt)
+            except asyncpg.DuplicateObjectError:
+                pass  # type/index already exists — safe to skip
+            except asyncpg.DuplicateTableError:
+                pass  # table already exists — safe to skip (belt-and-suspenders)
+    logger.info("Schema applied.")
+
+
 async def post_init(app):
-    await get_pool()  # warm up DB pool
+    pool = await get_pool()
+    await _apply_schema(pool)
     bot = app.bot
     asyncio.create_task(payment_watcher_loop(bot))
     asyncio.create_task(deposit_watcher_loop(bot))
     logger.info("DB pool ready. Watchers started.")
-
-async def post_init(app):
-    pool = await get_pool()
-    schema_sql = Path("db/schema.sql").read_text()
-    await pool.execute(schema_sql)          # safe — all tables use CREATE IF NOT EXISTS
-    bot = app.bot
-    asyncio.create_task(payment_watcher_loop(bot))
-    asyncio.create_task(deposit_watcher_loop(bot))
-    logger.info("DB ready. Watchers started.")
 
 
 async def post_shutdown(app):

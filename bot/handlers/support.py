@@ -217,6 +217,7 @@ def register(app):
             WAITING_TICKET_MSG: [MessageHandler(filters.TEXT & ~filters.COMMAND, support_ticket_message)]
         },
         fallbacks=[CommandHandler("cancel", ticket_cancel)],
+        per_message=False,
     )
     conv_admin_reply = ConversationHandler(
         entry_points=[CallbackQueryHandler(admin_ticket_reply_cb, pattern=r"^admin:ticket_reply:")],
@@ -224,6 +225,7 @@ def register(app):
             WAITING_TICKET_REPLY: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_ticket_reply_text)]
         },
         fallbacks=[CommandHandler("cancel", ticket_cancel)],
+        per_message=False,
     )
     app.add_handler(conv_ticket)
     app.add_handler(conv_admin_reply)

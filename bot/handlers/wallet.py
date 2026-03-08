@@ -203,6 +203,7 @@ def register(app):
             WAITING_SIGNATURE: [MessageHandler(filters.TEXT & ~filters.COMMAND, wallet_signature_cb)]
         },
         fallbacks=[CommandHandler("cancel", wallet_cancel)],
+        per_message=False,
     )
     app.add_handler(conv)
     # WebApp data — fires when mini-app calls sendData()

@@ -805,21 +805,25 @@ def register(app):
         entry_points=[CallbackQueryHandler(admin_broadcast_start, pattern=r"^admin:broadcast$")],
         states={WAITING_BROADCAST: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_broadcast_preview)]},
         fallbacks=[_cancel],
+        per_message=False,
     )
     conv_proof = ConversationHandler(
         entry_points=[CallbackQueryHandler(admin_proof_start, pattern=r"^admin:proof:")],
         states={WAITING_PROOF: [MessageHandler(filters.PHOTO | filters.Document.ALL, admin_receive_proof)]},
         fallbacks=[_cancel],
+        per_message=False,
     )
     conv_progress = ConversationHandler(
         entry_points=[CallbackQueryHandler(admin_inprogress, pattern=r"^admin:inprogress:")],
         states={WAITING_PROGRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_set_progress)]},
         fallbacks=[_cancel],
+        per_message=False,
     )
     conv_note = ConversationHandler(
         entry_points=[CallbackQueryHandler(admin_note_start, pattern=r"^admin:note:")],
         states={WAITING_NOTE: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_note)]},
         fallbacks=[_cancel],
+        per_message=False,
     )
     conv_new_svc = ConversationHandler(
         entry_points=[CallbackQueryHandler(admin_service_new_start, pattern=r"^admin:service_new$")],
@@ -833,26 +837,31 @@ def register(app):
             WAITING_SVC_TEMPLATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_svc_template)],
         },
         fallbacks=[_cancel],
+        per_message=False,
     )
     conv_edit_price = ConversationHandler(
         entry_points=[CallbackQueryHandler(admin_service_edit_price, pattern=r"^admin:service_price:")],
         states={WAITING_SVC_EDIT_PRICE: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_service_save_price)]},
         fallbacks=[_cancel],
+        per_message=False,
     )
     conv_edit_name = ConversationHandler(
         entry_points=[CallbackQueryHandler(admin_service_edit_name_start, pattern=r"^admin:svc_edit_name:")],
         states={WAITING_SVC_EDIT_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_service_save_name)]},
         fallbacks=[_cancel],
+        per_message=False,
     )
     conv_edit_desc = ConversationHandler(
         entry_points=[CallbackQueryHandler(admin_service_edit_desc_start, pattern=r"^admin:svc_edit_desc:")],
         states={WAITING_SVC_EDIT_DESC: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_service_save_desc)]},
         fallbacks=[_cancel],
+        per_message=False,
     )
     conv_edit_template = ConversationHandler(
         entry_points=[CallbackQueryHandler(admin_service_edit_template_start, pattern=r"^admin:service_template:")],
         states={WAITING_SVC_EDIT_TEMPLATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_service_save_template)]},
         fallbacks=[_cancel],
+        per_message=False,
     )
 
     # ConversationHandlers must be registered before plain CallbackQueryHandlers

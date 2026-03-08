@@ -265,6 +265,7 @@ def register(app):
         fallbacks=[CommandHandler("cancel", conv_cancel)],
         per_user=True,
         per_chat=True,
+        per_message=False,
     )
     app.add_handler(CallbackQueryHandler(service_info_cb, pattern=r"^service:\d+$"))
     app.add_handler(conv)
