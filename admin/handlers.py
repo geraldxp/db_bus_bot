@@ -760,11 +760,16 @@ async def admin_broadcast_confirm_cb(update: Update, ctx: ContextTypes.DEFAULT_T
         await query.edit_message_text("❌ No broadcast message found. Start over.")
         return
 
+    from utils.templates import broadcast_message as tmpl_broadcast
     users = await bus.get_all_users()
     sent, failed = 0, 0
     for user in users:
         try:
-            await query.get_bot().send_message(user["telegram_id"], f"📢 {msg}")
+            await query.get_bot().send_message(
+                user["telegram_id"],
+                tmpl_broadcast(msg),
+                parse_mode="Markdown",
+            )
             sent += 1
         except Exception as e:
             logger.debug("Broadcast failed for user %s: %s", user["telegram_id"], e)

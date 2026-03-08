@@ -95,10 +95,8 @@ async def payment_watcher_loop(bot):
                     await bus.update_order_status(order["id"], "CANCELLED")
                     tg_id = await bus.get_order_owner_telegram_id(order["id"])
                     if tg_id:
-                        await notify_user(
-                            bot, tg_id,
-                            f"⏰ *Order \\#{order['id']}* payment expired and was cancelled\\."
-                        )
+                        from utils.templates import order_cancelled
+                        await notify_user(bot, tg_id, order_cancelled(order["id"]))
                     continue
 
                 if not order["pay_address"] or not order["pay_memo"]:
@@ -122,10 +120,10 @@ async def payment_watcher_loop(bot):
                     )
                     tg_id = await bus.get_order_owner_telegram_id(order["id"])
                     if tg_id:
+                        from utils.templates import payment_success
                         await notify_user(
                             bot, tg_id,
-                            f"✅ *Payment confirmed\\!* Order \\#{order['id']} is queued\\.\n"
-                            f"TX: `{tx_sig}`"
+                            payment_success(order["id"], 0)  # balance shown in order detail
                         )
                     await notify_admin_new_order(bot, order["id"])
 

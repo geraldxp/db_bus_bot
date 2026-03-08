@@ -191,8 +191,9 @@ async def wallet_disconnect_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     db_user = await bus.get_user(update.effective_user.id)
     await bus.update_wallet_pubkey(db_user["id"], None)
     logger.info("User %s disconnected wallet", update.effective_user.id)
+    from utils.templates import wallet_disconnected
     await query.edit_message_text(
-        "🔌 Wallet disconnected.", reply_markup=wallet_keyboard(False)
+        wallet_disconnected(), parse_mode="Markdown", reply_markup=wallet_keyboard(False)
     )
 
 

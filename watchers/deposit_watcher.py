@@ -90,10 +90,8 @@ async def deposit_watcher_loop(bot):
                     await bus.update_deposit_status(deposit["id"], "EXPIRED")
                     tg_id = await bus.get_deposit_owner_telegram_id(deposit["id"])
                     if tg_id:
-                        await notify_user(
-                            bot, tg_id,
-                            f"⏰ Your deposit of `{deposit['expected_amount']} SOL` expired\\."
-                        )
+                        from utils.templates import deposit_expired
+                        await notify_user(bot, tg_id, deposit_expired(float(deposit["expected_amount"])))
                     continue
 
                 confirmed, tx_sig = await check_deposit_received(
@@ -120,12 +118,13 @@ async def deposit_watcher_loop(bot):
 
                     tg_id = await bus.get_deposit_owner_telegram_id(deposit["id"])
                     if tg_id:
+                        from utils.templates import deposit_confirmed as tmpl_deposit_confirmed
                         await notify_user(
                             bot, tg_id,
-                            f"✅ Deposit of `{deposit['expected_amount']} SOL` confirmed\\!\n"
-                            f"New balance: `{new_balance:.9f} SOL`\n"
-                            f"TX: `{tx_sig}`"
+                            tmpl_deposit_confirmed(float(deposit["expected_amount"]), new_balance)
                         )
+                    from utils.notify import notify_admin_deposit
+                    await notify_admin_deposit(bot, deposit["id"], float(deposit["expected_amount"]))
 
         except Exception as e:
             logger.error("Deposit watcher error: %s", e, exc_info=True)

@@ -58,22 +58,15 @@ async def support_ticket_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE)
 
     await bus.insert_ticket_message(ticket["id"], "USER", text=update.message.text)
 
-    # Forward to support group
+    # Forward to support group via structured notification
     forwarded = True
     try:
-        await update.get_bot().send_message(
-            SUPPORT_GROUP_ID,
-            f"🎫 *Ticket \\#{ticket['id']}*\n"
-            f"From: @{update.effective_user.username or update.effective_user.id}\n\n"
-            f"{update.message.text}\n\n"
-            f"Reply: `/reply {ticket['id']} <message>`\n"
-            f"Close: `/close_ticket {ticket['id']}`",
-            parse_mode="Markdown",
-        )
+        from utils.notify import notify_admin_new_ticket
+        await notify_admin_new_ticket(update.get_bot(), ticket["id"])
     except Exception as e:
         logger.error(
-            "Failed to forward ticket #%s to support group %s: %s",
-            ticket["id"], SUPPORT_GROUP_ID, e, exc_info=True,
+            "Failed to forward ticket #%s to support group: %s",
+            ticket["id"], e, exc_info=True,
         )
         forwarded = False
 
